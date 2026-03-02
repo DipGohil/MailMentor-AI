@@ -86,7 +86,7 @@ dashboard/
 ### 1. Clone Project
 
 ```bash
-git clone <repo_url>
+git clone https://github.com/DipGohil/MailMentor-AI
 cd MailMentor
 ```
 
@@ -162,4 +162,4 @@ http://localhost:8501
 ## Author
 
 Dip Gohil
-AI / ML & GenAI Developer
+AI/ML Developer
