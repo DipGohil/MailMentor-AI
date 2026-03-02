@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+.env
+
+# Database
+*.db
+chroma_db/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+
+# secret files
+token.json
+credentials.json
