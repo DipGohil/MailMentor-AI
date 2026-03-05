@@ -18,8 +18,6 @@ def generate_inbox_summary(limit = 3):
     # fetch latest emails
     emails = (
         db.query(Email)
-        # .filter(Email.created_at >= start)
-        # .filter(Email.created_at <= end)
         .order_by(Email.created_at.desc())
         .limit(limit)
         .all()
@@ -70,7 +68,7 @@ def chunk_emails(emails, chunk_size=3):
 def build_context(email_chunk):
     context = ""
     for e in email_chunk:
-        body = (e.body or "")[:150]   # VERY IMPORTANT
+        body = (e.body or "")[:150]
         context += f"""
 Date: {e.created_at}
 Subject: {e.subject}

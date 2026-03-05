@@ -12,7 +12,6 @@ def get_dashboard_stats():
         
         data = res.json()
         
-        # st.write("DEBUG:", data)
         return data
     
     except Exception as e:
@@ -83,9 +82,7 @@ with col5:
 with col6:
     st.metric("Latest Mail (days ago)", stats.get("latest_days", "-")) 
 
-# ===============================
-# AI WORKSPACE (SINGLE OUTPUT)
-# ===============================
+# AI WORKSPACE
 
 st.markdown("## 🤖 MailMentor AI Workspace")
 

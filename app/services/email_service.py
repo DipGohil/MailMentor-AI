@@ -7,6 +7,7 @@ from app.rag.vector_store import add_email_vector
 from app.models.summary_model import Summary
 from app.services.summary_generator import generate_email_summary
 from datetime import datetime, timedelta, timezone
+# from app.services.action_service import extract_actions
 
 def get_db():
     db = SessionLocal()
@@ -21,9 +22,6 @@ def save_email(db, data):
     existing = db.query(Email).filter(
         Email.gmail_id == data["gmail_id"]
     ).first()
-    
-    # if existing:
-    #     return
     
     category = categorize_email(data["subject"])
     
@@ -40,8 +38,9 @@ def save_email(db, data):
     db.add(email)
     db.commit()
     db.refresh(email)
+    # extract_actions(limit = 3)
     
-    # --- generate AI summary ---
+    # -generate AI summary
     summary_text = generate_email_summary(
         email.subject,
         email.body or ""

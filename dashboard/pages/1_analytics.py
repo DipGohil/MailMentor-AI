@@ -7,9 +7,9 @@ st.set_page_config(layout="wide", page_title="MailMentor Elite Analytics")
 API_URL = "http://localhost:8000"
 
 
-# ==========================
-# API CALL (SAFE)
-# ==========================
+
+# API CALL
+
 def get_analytics():
     try:
         res = requests.get(f"{API_URL}/analytics/")
@@ -42,16 +42,16 @@ finance = categories.get("Finance", 0)
 security = categories.get("Security", 0)
 
 
-# ==========================
+
 # HEADER
-# ==========================
+
 st.title("MailMentor Elite Analytics")
 st.caption("AI-powered Executive Email Intelligence")
 
 
-# ==========================
+
 # KPI SECTION
-# ==========================
+
 st.markdown("### Executive KPIs")
 
 k1, k2, k3, k4 = st.columns(4)
@@ -64,12 +64,11 @@ k4.metric("Security Alerts", security)
 st.divider()
 
 
-# ==========================
 # ALERTS + TREND SECTION
-# ==========================
+
 left = st.container()
 
-# ------- TREND GRAPH -------
+# TREND GRAPH
 with left:
     st.subheader("Weekly Email Trend")
 
@@ -91,9 +90,8 @@ with left:
 st.divider()
 
 
-# ==========================
 # CATEGORY DISTRIBUTION
-# ==========================
+
 st.subheader("Email Category Distribution")
 
 if categories:
@@ -107,9 +105,9 @@ else:
 
 st.divider()
 
-# ==========================
-# AI INSIGHT ENGINE (REAL API)
-# ==========================
+
+# AI INSIGHT ENGINE
+
 st.subheader("🤖 AI Insight Engine")
 
 try:
@@ -141,9 +139,9 @@ def get_email_summary(email_id):
     except Exception as e:
         return f"Summary error: {e}"
 
-# ==========================
+
 # LATEST EMAILS TABLE
-# ==========================
+
 st.subheader("Latest Emails")
 
 if latest:
