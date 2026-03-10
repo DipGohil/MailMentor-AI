@@ -9,7 +9,7 @@ router = APIRouter(
 @router.get("/fetch")
 def fetch_emails():
     
-    result = fetch_and_store_emails(limit = 5)
+    result = fetch_and_store_emails(limit = 500)
     
     return {
         "status": "success",

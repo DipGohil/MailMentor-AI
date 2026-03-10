@@ -41,3 +41,24 @@ def categorize_email(subject: str):
         return "Meeting"
 
     return "General"
+
+IMPORTANT_KEYWORDS = [
+    "urgent",
+    "asap",
+    "important",
+    "deadline",
+    "meeting",
+    "action required",
+    "immediate",
+    "submit",
+]
+
+def detect_priority(text):
+
+    text = text.lower()
+
+    for word in IMPORTANT_KEYWORDS:
+        if word in text:
+            return "Important"
+
+    return "Normal"

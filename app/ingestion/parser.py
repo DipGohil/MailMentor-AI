@@ -94,7 +94,6 @@ def parse_email(message):
         "thread_id": message["threadId"],
         "sender": headers.get("sender", ""),
         "subject": headers.get("subject", ""),
-        # "date": headers.get("date", ""),
         "body": body,
         "created_at": email_datetime
     }

@@ -3,11 +3,11 @@ from app.services.categorization_service import categorize_email
 from app.ingestion.parser import parse_email
 from app.dependencies import SessionLocal
 from app.models.email_model import Email
-from app.rag.vector_store import add_email_vector
 from app.models.summary_model import Summary
 from app.services.summary_generator import generate_email_summary
 from datetime import datetime, timedelta, timezone
-# from app.services.action_service import extract_actions
+from app.rag.vector_store import add_email_vectors_batch
+from app.services.categorization_service import detect_priority
 
 def get_db():
     db = SessionLocal()
@@ -16,14 +16,19 @@ def get_db():
     finally:
         db.close()
 
-def save_email(db, data):
+def save_email(db, data, generate_summary = True):
     
     # Prevent duplicates
     existing = db.query(Email).filter(
         Email.gmail_id == data["gmail_id"]
     ).first()
     
+    if existing:
+        return None
+    
     category = categorize_email(data["subject"])
+    
+    priority = detect_priority(data["subject"] + " " + data["body"])
     
     email = Email(
         gmail_id = data["gmail_id"],
@@ -32,58 +37,97 @@ def save_email(db, data):
         subject = data["subject"],
         body = data["body"],
         category = category,
+        priority = priority,
         created_at = data["created_at"].replace(tzinfo=None)
     )
     
     db.add(email)
     db.commit()
     db.refresh(email)
-    # extract_actions(limit = 3)
     
-    # -generate AI summary
-    summary_text = generate_email_summary(
-        email.subject,
-        email.body or ""
-    )
+    # Generate summary only for short emails
+    if generate_summary and email.body:
 
-    summary = Summary(
-        email_id=email.id,
-        summary_text=summary_text
-    )
+        summary_text = generate_email_summary(
+            email.subject,
+            email.body[:1500]
+        )
 
-    db.add(summary)
-    db.commit()
+        summary = Summary(
+            email_id=email.id,
+            summary_text=summary_text
+        )
+
+        db.add(summary)
+        db.commit()
+        
+    return email
     
-    # add vector
-    text_for_embedding = f"{email.subject}\n{email.body or ''}"
-    add_email_vector(email.id, text_for_embedding, email.created_at)
 
-def fetch_and_store_emails(limit = 10):
+def fetch_and_store_emails(limit=500):
+
     service = authenticate_gmail()
     db = SessionLocal()
-    
-    # last X days
-    days = 7
-    after_time = int(
-        (datetime.now(timezone.utc) - timedelta(days = days)).timestamp()
-    )
-    
-    query = f"after:{after_time}"
-    
-    messages = service.users().messages().list(
-        userId = "me",
-        q = query,
-        maxResults = limit
-    ).execute().get("messages", [])
-    
-    for m in messages:
+
+    emails_for_embedding = []
+
+    fetched = 0
+    next_page = None
+
+    # last X days filter
+    # query = None
+
+    while fetched < limit:
+
+        response = service.users().messages().list(
+            userId="me",
+            maxResults=100,
+            pageToken=next_page
+        ).execute()
+
+        messages = response.get("messages", [])
+
+        if not messages:
+            break
+
+        for m in messages:
+
+            full_msg = get_full_message(service, m["id"])
+
+            parsed = parse_email(full_msg)
+
+            email = save_email(db, parsed, generate_summary=False)
+
+            if email:
+
+                text_for_embedding = f"""
+                Subject: {email.subject}
+                Sender: {email.sender}
+                Category: {email.category}
+
+                {email.body or ''}
+                """
+
+                emails_for_embedding.append({
+                    "id": email.id,
+                    "text": text_for_embedding,
+                    "created_at": email.created_at
+                })
+
+            fetched += 1
+
+            if fetched >= limit:
+                break
+
+        next_page = response.get("nextPageToken")
+
+        if not next_page:
+            break
         
-        full_msg = get_full_message(service, m["id"])
-        
-        parsed = parse_email(full_msg)
-        
-        save_email(db, parsed)
-    
+    if emails_for_embedding:
+        add_email_vectors_batch(emails_for_embedding)
+
     db.close()
-    
-    return {"status": "emails saved"}
+
+    return {"status": f"{fetched} emails saved"}
+

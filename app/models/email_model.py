@@ -14,4 +14,5 @@ class Email(Base):
     body = Column(Text)
     thread_id = Column(String)
     category = Column(String, default="General")
+    priority = Column(String, default="Normal")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

@@ -4,26 +4,18 @@ import requests
 
 API_URL = "http://localhost:8000"
 
+def get_latest_emails():
 
-def get_dashboard_stats():
     try:
         res = requests.get(f"{API_URL}/analytics/")
         res.raise_for_status()
-        
+
         data = res.json()
-        
-        return data
-    
-    except Exception as e:
-        st.error(f"API error: {e}")
-        return {
-            "total": 0,
-            "important": 0,
-            "jobs": 0,
-            "meetings": 0,
-            "finance": 0,
-            "latest_days": "-"
-        }
+
+        return data.get("latest", [])
+
+    except:
+        return []
 
 st.set_page_config(
     page_title="MailMentor AI",
@@ -56,31 +48,29 @@ with st.sidebar:
             requests.get(f"{API_URL}/emails/fetch")
             st.success("Updated!")
             st.rerun()
-    
-st.markdown("## Mail Insights")
+            
+latest_emails = get_latest_emails()
+            
+priority_emails = [
+    e for e in latest_emails
+    if e.get("priority") == "Important"
+]    
 
-stats = get_dashboard_stats()
+if priority_emails:
 
-col1, col2, col3 = st.columns(3)
-col4, col5, col6 = st.columns(3)
+    st.markdown("## 🚨 Important Emails")
 
-with col1:
-    st.metric("Total Emails", stats["total"])
+    for email in priority_emails:
 
-with col2:
-    st.metric("Important", stats["important"])
-
-with col3:
-    st.metric("Job Related", stats["jobs"])
-
-with col4:
-    st.metric("Meetings", stats["meetings"])
-
-with col5:
-    st.metric("Finance", stats["finance"])
-
-with col6:
-    st.metric("Latest Mail (days ago)", stats.get("latest_days", "-")) 
+        st.markdown(
+            f"""
+            <div style="border-left:6px solid red;padding:12px;background:#2a1a1a;border-radius:6px;margin-bottom:10px">
+            <b>{email['subject']}</b><br>
+            <small>From: {email['sender']}</small>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 # AI WORKSPACE
 
