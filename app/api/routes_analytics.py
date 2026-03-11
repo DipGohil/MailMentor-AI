@@ -205,3 +205,33 @@ Return only the summary.
     return {
         "summary": summary
     }
+    
+@router.get("/email/{message_id}")
+def get_full_email(message_id: str):
+
+    service = get_gmail_service()
+
+    msg_data = service.users().messages().get(
+        userId="me",
+        id=message_id,
+        format="full"
+    ).execute()
+
+    headers = msg_data["payload"]["headers"]
+
+    subject = ""
+    sender = ""
+
+    for h in headers:
+        if h["name"] == "Subject":
+            subject = h["value"]
+        if h["name"] == "From":
+            sender = h["value"]
+
+    snippet = msg_data.get("snippet", "")
+
+    return {
+        "subject": subject,
+        "sender": sender,
+        "body": snippet
+    }
