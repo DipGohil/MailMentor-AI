@@ -64,7 +64,7 @@ def save_email(db, data, generate_summary = True):
     return email
     
 
-def fetch_and_store_emails(limit=500):
+def fetch_and_store_emails(limit=100): #500
 
     service = authenticate_gmail()
     db = SessionLocal()
@@ -74,14 +74,13 @@ def fetch_and_store_emails(limit=500):
     fetched = 0
     next_page = None
 
-    # last X days filter
     # query = None
 
     while fetched < limit:
 
         response = service.users().messages().list(
             userId="me",
-            maxResults=100,
+            maxResults=25, #100
             pageToken=next_page
         ).execute()
 
@@ -105,7 +104,7 @@ def fetch_and_store_emails(limit=500):
                 Sender: {email.sender}
                 Category: {email.category}
 
-                {email.body or ''}
+                {(email.body or '')[:500]}
                 """
 
                 emails_for_embedding.append({
@@ -123,7 +122,7 @@ def fetch_and_store_emails(limit=500):
 
         if not next_page:
             break
-        
+    
     if emails_for_embedding:
         add_email_vectors_batch(emails_for_embedding)
 

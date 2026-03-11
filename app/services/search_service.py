@@ -14,9 +14,9 @@ MAX_EMAILS = 10
 MAX_CHARS_PER_EMAIL = 700
 
 
-# -----------------------------
+
 # CLEAN EMAIL TEXT
-# -----------------------------
+
 def smart_clean_text(text: str):
 
     if not text:
@@ -51,9 +51,9 @@ def smart_clean_text(text: str):
     return cleaned[:MAX_CHARS_PER_EMAIL]
 
 
-# -----------------------------
+
 # CONTEXT BUILDER
-# -----------------------------
+
 def clean_context(results):
 
     context = []
@@ -75,9 +75,9 @@ Content: {content}
     return "\n\n".join(context)
 
 
-# -----------------------------
+
 # FETCH LATEST EMAILS FROM GMAIL
-# -----------------------------
+
 def get_latest_from_gmail(limit=10):
 
     creds = Credentials.from_authorized_user_file(
@@ -128,9 +128,8 @@ def get_latest_from_gmail(limit=10):
     return results
 
 
-# -----------------------------
 # KEYWORD SEARCH (POSTGRES)
-# -----------------------------
+
 def keyword_search(query):
 
     db = SessionLocal()
@@ -160,9 +159,8 @@ def keyword_search(query):
     return results
 
 
-# -----------------------------
 # PRIORITY SCORING
-# -----------------------------
+
 priority_keywords = [
     "urgent",
     "deadline",
@@ -186,9 +184,8 @@ def score_email(email):
     return score
 
 
-# -----------------------------
 # MAIN SEARCH FUNCTION
-# -----------------------------
+
 def search_emails(query: str):
 
     query_lower = query.lower()
