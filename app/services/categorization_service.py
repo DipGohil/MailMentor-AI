@@ -1,3 +1,6 @@
+from app.rag.embeddings import generate_embedding
+import numpy as np
+
 def categorize_email(subject: str):
 
     if not subject:
@@ -50,15 +53,16 @@ IMPORTANT_KEYWORDS = [
     "meeting",
     "action required",
     "immediate",
-    "submit",
+    "submit"
 ]
 
 def detect_priority(text):
 
-    text = text.lower()
+    text_lower = text.lower()
 
+    # Keyword rule
     for word in IMPORTANT_KEYWORDS:
-        if word in text:
+        if word in text_lower:
             return "Important"
 
     return "Normal"

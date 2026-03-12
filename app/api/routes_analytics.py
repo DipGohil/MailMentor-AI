@@ -50,60 +50,68 @@ def get_analytics(days: int = 7):
     cutoff_date = datetime.now(timezone.utc) - timedelta(days = days)
     
     emails = (
-    db.query(Email)
-    .filter(Email.created_at >= cutoff_date)
-    .all()
+        db.query(Email)
+        .filter(Email.created_at >= cutoff_date)
+        .all()
+    )
+    
+    
+    # CATEGORY DISTRIBUTION
+    
+    category_counts = (
+        db.query(Email.category, func.count(Email.id))
+        .filter(Email.created_at >= cutoff_date)
+        .group_by(Email.category)
+        .all()
     )
 
-    total = len(emails)
+    categories = {c: n for c, n in category_counts}
+    
+    trend = (
+        db.query(
+            func.date(Email.created_at).label("day"),
+            func.count(Email.id)
+        )
+        .filter(Email.created_at >= cutoff_date)
+        .group_by(func.date(Email.created_at))
+        .order_by(func.date(Email.created_at))
+        .all()
+    )
+    trend_data = [
+        {"day": str(t.day), "count": t[1]}
+        for t in trend
+    ]
+ 
 
+    total = len(emails)
     jobs = len([e for e in emails if e.category == "Job"])
     meetings = len([e for e in emails if e.category == "Meeting"])
-    important = len([e for e in emails
-        if detect_priority(e.subject) == "Important"
-        or "action" in e.subject.lower()
-    ])
+    # important = len([e for e in emails
+    #     if detect_priority(e.subject) == "Important"
+    #     or "action" in e.subject.lower()
+    # ])
+    important = len([e for e in emails if e.priority == "Important"])
+    finance = len([e for e in emails if e.category == "Finance"])
     
-    service = get_gmail_service()
-
-    results = service.users().messages().list(
-        userId="me",
-        maxResults=100
-    ).execute()
-
-    messages = results.get("messages", [])
+    latest_emails = (
+        db.query(Email)
+        .order_by(Email.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    
     latest = []
 
-    for msg in messages:
+    for e in latest_emails:
 
-        msg_data = service.users().messages().get(
-            userId="me",
-            id=msg["id"],
-            format="full",
-            metadataHeaders=["Subject", "From"]
-        ).execute()
-
-        headers = msg_data["payload"]["headers"]
-
-        subject = ""
-        sender = ""
-
-        for h in headers:
-            if h["name"] == "Subject":
-                subject = h["value"]
-            if h["name"] == "From":
-                sender = h["value"]
-
-        priority = detect_priority(subject)
         
         latest.append({
-            "id": msg["id"],
-            "sender": sender,
-            "subject": subject,
-            "category": "Live Gmail",
-            "priority": priority
-        })
-    
+            "id": e.gmail_id,
+            "sender": e.sender,
+            "subject": e.subject,
+            "category": e.category,
+            "priority": e.priority
+        })   
 
     db.close()
     
@@ -116,9 +124,12 @@ def get_analytics(days: int = 7):
         "total": total,
         "jobs": jobs,
         "meetings": meetings,
+        "finance": finance,
         "important": important,
+        "categories": categories,
         "latest_days": days,
-        "latest": latest
+        "latest": latest,
+        "trend": trend_data
     }
 
 @router.get("/gmail-summary/{message_id}")

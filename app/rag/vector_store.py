@@ -8,7 +8,6 @@ collection = client.get_or_create_collection(
 )
 
 
-
 # SINGLE EMAIL VECTOR (existing)
 
 def add_email_vector(email_id, text, created_at=None):
@@ -28,8 +27,7 @@ def add_email_vector(email_id, text, created_at=None):
         documents=[text],
         metadatas=[metadata]
     )
-
-
+    
 
 # BATCH EMAIL EMBEDDING
 

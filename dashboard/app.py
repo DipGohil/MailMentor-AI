@@ -4,6 +4,7 @@ import requests
 
 API_URL = "http://localhost:8000"
 
+@st.cache_data(ttl=60)
 def get_latest_emails():
 
     try:
@@ -54,7 +55,7 @@ latest_emails = get_latest_emails()
 priority_emails = [
     e for e in latest_emails
     if e.get("priority") == "Important"
-][:5] # Limits to show only 5
+] # Limits to show only 5
 
 if priority_emails:
 

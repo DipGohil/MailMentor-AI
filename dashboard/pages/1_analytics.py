@@ -36,10 +36,11 @@ st.markdown("""
 
 categories = data.get("categories", {})
 latest = data.get("latest", [])
-
 total = data.get("total", 0)
 jobs = data.get("jobs", 0)
 important = data.get("important", 0)
+meetings = data.get("meetings", 0)
+finance = data.get("finance", 0)
 
 
 
@@ -54,16 +55,17 @@ st.caption("AI-powered Executive Email Intelligence")
 
 st.markdown("### Executive KPIs")
 
-k1, k2, k3 = st.columns(3)
+k1, k2, k3, k4, k5 = st.columns(5)
 
 k1.metric("Total Emails", total)
 k2.metric("Job Opportunities", jobs)
 k3.metric("Important Emails", important)
-
+k4.metric("Meetings", meetings)
+k5.metric("Finance", finance)
 st.divider()
 
 
-# ALERTS + TREND SECTION
+# TREND SECTION
 
 left = st.container()
 
@@ -71,22 +73,56 @@ left = st.container()
 with left:
     st.subheader("Weekly Email Trend")
 
-    trend_df = pd.DataFrame({
-        "Day": ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
-        "Emails": [
-            max(total-6, 0),
-            max(total-5, 0),
-            max(total-4, 0),
-            max(total-3, 0),
-            max(total-2, 0),
-            max(total-1, 0),
-            total
-        ]
-    })
+    trend = data.get("trend", [])
 
-    st.line_chart(trend_df.set_index("Day"))
+    if trend:
+
+        trend_df = pd.DataFrame(trend)
+
+        # convert to datetime
+        trend_df["day"] = pd.to_datetime(trend_df["day"])
+
+        # sort by real date
+        trend_df = trend_df.sort_values("day")
+
+        # create readable label
+        trend_df["label"] = trend_df["day"].dt.strftime("%a")
+
+        # use real date as index to keep correct order
+        trend_df = trend_df.set_index("day")
+
+        st.line_chart(
+            trend_df["count"],
+            # use_container_width=True
+            width='stretch'
+        )
+
+    else:
+        st.info("No trend data available.")
 
 st.divider()
+
+# EMAIL CATEGORY
+
+st.subheader("Email Category Distribution")
+
+categories = data.get("categories", {})
+
+if categories:
+
+    cat_df = pd.DataFrame(
+        list(categories.items()),
+        columns=["Category", "Count"]
+    )
+
+    st.bar_chart(
+        cat_df.set_index("Category"),
+        # use_container_width=True
+        width='stretch'
+    )
+
+else:
+    st.info("No category data available.")
 
 def get_email_summary(email_id):
     try:
