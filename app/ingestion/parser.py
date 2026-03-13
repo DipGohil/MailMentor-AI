@@ -84,9 +84,18 @@ def parse_email(message):
     
     # Convert Gmail date → datetime
     date_str = headers.get("date", "")
+    
     try:
-        email_datetime = parsedate_to_datetime(date_str)
+        
+        internal_ts = int(message.get("internalDate", 0)) / 1000
+
+        if internal_ts:
+            email_datetime = datetime.fromtimestamp(internal_ts, tz=timezone.utc)
+        else:
+            email_datetime = parsedate_to_datetime(date_str)
+            
     except:
+        
         email_datetime = datetime.now(timezone.utc)
     
     return {

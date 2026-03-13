@@ -13,6 +13,7 @@ class Email(Base):
     subject = Column(String)
     body = Column(Text)
     thread_id = Column(String)
+    history_id = Column(String, index = True)
     category = Column(String, default="General")
     priority = Column(String, default="Normal")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

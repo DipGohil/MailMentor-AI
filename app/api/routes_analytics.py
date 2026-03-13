@@ -95,9 +95,9 @@ def get_analytics(days: int = 7):
     
     latest_emails = (
         db.query(Email)
+        .filter(Email.created_at >= cutoff_date)
         .order_by(Email.created_at.desc())
         .limit(50)
-        .all()
     )
     
     latest = []

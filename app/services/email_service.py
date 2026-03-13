@@ -8,6 +8,7 @@ from app.services.summary_generator import generate_email_summary
 from datetime import datetime, timedelta, timezone
 from app.rag.vector_store import add_email_vectors_batch
 from app.services.categorization_service import detect_priority
+from googleapiclient.errors import HttpError
 
 def get_db():
     db = SessionLocal()
@@ -36,6 +37,7 @@ def save_email(db, data, generate_summary = True):
         sender = data["sender"],
         subject = data["subject"],
         body = data["body"],
+        history_id = data.get("history_id"), # New
         category = category,
         priority = priority,
         created_at = data["created_at"].replace(tzinfo=None)
@@ -68,6 +70,16 @@ def fetch_and_store_emails(limit=100): #500
 
     service = authenticate_gmail()
     db = SessionLocal()
+    
+    # get last history id
+    last_email = (
+        db.query(Email)
+        .order_by(Email.history_id.desc())
+        .first()
+    )
+    
+    last_history_id = last_email.history_id if last_email else None
+    
 
     emails_for_embedding = []
 
@@ -78,13 +90,40 @@ def fetch_and_store_emails(limit=100): #500
 
     while fetched < limit:
 
-        response = service.users().messages().list(
-            userId="me",
-            maxResults=25, #100
-            pageToken=next_page
-        ).execute()
+        # incremental sync
+        messages = []
 
-        messages = response.get("messages", [])
+        if last_history_id:
+
+            try:
+
+                history = service.users().history().list(
+                    userId="me",
+                    startHistoryId=last_history_id
+                ).execute()
+
+                for record in history.get("history", []):
+                    for msg in record.get("messagesAdded", []):
+                        messages.append({"id": msg["message"]["id"]})
+
+            except HttpError:
+
+                # history expired → fallback to full fetch
+                print("History expired. Running full sync.")
+
+                last_history_id = None
+
+        else:
+            # first time full fetch
+            response = service.users().messages().list(
+                userId="me",
+                q = "newer_than:7d",
+                # q = "newer_than:7d -category:promotions",
+                maxResults=25, #100
+                pageToken=next_page
+            ).execute()
+
+            messages = response.get("messages", [])
 
         if not messages:
             break
@@ -94,6 +133,9 @@ def fetch_and_store_emails(limit=100): #500
             full_msg = get_full_message(service, m["id"])
 
             parsed = parse_email(full_msg)
+            
+            # Attach gmail history id
+            parsed["history_id"] = full_msg.get("historyId")
 
             email = save_email(db, parsed, generate_summary=False)
 
