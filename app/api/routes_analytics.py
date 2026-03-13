@@ -86,10 +86,6 @@ def get_analytics(days: int = 7):
     total = len(emails)
     jobs = len([e for e in emails if e.category == "Job"])
     meetings = len([e for e in emails if e.category == "Meeting"])
-    # important = len([e for e in emails
-    #     if detect_priority(e.subject) == "Important"
-    #     or "action" in e.subject.lower()
-    # ])
     important = len([e for e in emails if e.priority == "Important"])
     finance = len([e for e in emails if e.category == "Finance"])
     
@@ -98,6 +94,7 @@ def get_analytics(days: int = 7):
         .filter(Email.created_at >= cutoff_date)
         .order_by(Email.created_at.desc())
         .limit(50)
+        .all()
     )
     
     latest = []
