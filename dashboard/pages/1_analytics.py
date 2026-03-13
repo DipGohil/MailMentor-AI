@@ -137,42 +137,110 @@ def get_email_summary(email_id):
 
 # LATEST EMAILS TABLE
 
-st.subheader("Latest Emails")
+# st.subheader("Latest Emails")
 
-if latest:
+# if latest:
 
-    df_latest = pd.DataFrame(latest)
+#     df_latest = pd.DataFrame(latest)
 
-    for _, row in df_latest.iterrows():
+#     for _, row in df_latest.iterrows():
 
-        # SMALL TITLE STYLE
-        if row.get("priority") == "Important":
+#         # SMALL TITLE STYLE
+#         if row.get("priority") == "Important":
+
+#             st.markdown(
+#                 f"""
+#                 <div style="border-left:6px solid red;padding:10px;background:#2a1a1a">
+#                 🚨 <b>{row['subject']}</b><br>
+#                 From: {row['sender']}
+#                 </div>
+#                 """,
+#                 unsafe_allow_html=True
+#             )
+
+#         else:
+
+#             st.markdown(f"##### {row['subject']}")
+
+#         st.caption(
+#             f"From: {row['sender']} | Category: {row.get('category','General')}"
+#         )
+
+#     # FULL WIDTH BUTTON
+#         if st.button("Summarize Email", key=f"sum_{row['id']}"):
+
+#             with st.spinner("Generating AI summary..."):
+#                 summary = get_email_summary(row["id"])
+
+#             # SUMMARY BELOW (clean UI)
+#             st.info(summary)
+
+#         st.divider()
+
+# else:
+#     st.info("No recent emails available.")
+
+
+# SPLIT IMPORTANT AND NORMAL EMAILS
+
+important_emails = [e for e in latest if e.get("priority") == "Important"]
+normal_emails = [e for e in latest if e.get("priority") != "Important"]
+
+
+# IMPORTANT EMAILS (EXPANDABLE)
+
+if important_emails:
+
+    st.markdown("## 🚨 Important Emails")
+
+    with st.expander(f"View {len(important_emails)} important emails", expanded=True):
+
+        for email in important_emails:
 
             st.markdown(
                 f"""
                 <div style="border-left:6px solid red;padding:10px;background:#2a1a1a">
-                🚨 <b>{row['subject']}</b><br>
-                From: {row['sender']}
+                🚨 <b>{email['subject']}</b><br>
+                From: {email['sender']}
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
-        else:
+            st.caption(
+                f"From: {email['sender']} | Category: {email.get('category','General')}"
+            )
 
-            st.markdown(f"##### {row['subject']}")
+            if st.button("Summarize Email", key=f"imp_{email['id']}"):
+
+                with st.spinner("Generating AI summary..."):
+                    summary = get_email_summary(email["id"])
+
+                st.info(summary)
+
+            st.divider()
+
+
+
+# NORMAL LATEST EMAILS
+
+st.subheader("Latest Emails")
+
+if normal_emails:
+
+    for email in normal_emails:
+
+        st.markdown(f"##### {email['subject']}")
 
         st.caption(
-            f"From: {row['sender']} | Category: {row.get('category','General')}"
+            f"From: {email['sender']} | Category: {email.get('category','General')}"
         )
 
-    # FULL WIDTH BUTTON
-        if st.button("Summarize Email", key=f"sum_{row['id']}"):
+        if st.button("Summarize Email", key=f"norm_{email['id']}"):
 
             with st.spinner("Generating AI summary..."):
-                summary = get_email_summary(row["id"])
+                summary = get_email_summary(email["id"])
 
-            # SUMMARY BELOW (clean UI)
             st.info(summary)
 
         st.divider()
