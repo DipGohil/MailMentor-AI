@@ -56,13 +56,57 @@ IMPORTANT_KEYWORDS = [
     "submit"
 ]
 
+URGENT_CONTEXT = """
+urgent meeting deadline action required
+respond immediately project discussion
+important update submit report
+call tomorrow schedule meeting
+"""
+
+# Pre-compute semantic vector once
+urgent_vector = generate_embedding(URGENT_CONTEXT)
+
+# def detect_priority(text):
+
+#     text_lower = text.lower()
+
+#     # Keyword rule
+#     for word in IMPORTANT_KEYWORDS:
+#         if word in text_lower:
+#             return "Important"
+
+#     return "Normal"
+
 def detect_priority(text):
 
     text_lower = text.lower()
 
-    # Keyword rule
+    keyword_score = 0
+
+    # KEYWORD SCORE
     for word in IMPORTANT_KEYWORDS:
         if word in text_lower:
-            return "Important"
+            keyword_score += 1
+
+    keyword_score = min(keyword_score / 2, 1)  # normalize
+
+
+    # SEMANTIC SCORE
+    try:
+        email_vector = generate_embedding(text[:500])
+        similarity = np.dot(email_vector, urgent_vector)
+
+        semantic_score = float(similarity)
+
+    except:
+        semantic_score = 0
+
+
+    # HYBRID SCORE
+    final_score = (0.6 * keyword_score) + (0.4 * semantic_score)
+
+
+    if final_score > 0.75:
+        return "Important"
 
     return "Normal"

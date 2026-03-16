@@ -29,7 +29,9 @@ def save_email(db, data, generate_summary = True):
     
     category = categorize_email(data["subject"])
     
-    priority = detect_priority(data["subject"] + " " + data["body"])
+    # priority = detect_priority(data["subject"] + " " + data["body"])
+    text = f"{data['subject']} {data['body'][:800]}"
+    priority = detect_priority(text)
     
     email = Email(
         gmail_id = data["gmail_id"],
