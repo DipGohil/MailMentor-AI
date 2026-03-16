@@ -82,19 +82,15 @@ with left:
         # convert to datetime
         trend_df["day"] = pd.to_datetime(trend_df["day"])
 
-        # sort by real date
+        # sort by actual date
         trend_df = trend_df.sort_values("day")
 
-        # create readable label
-        trend_df["label"] = trend_df["day"].dt.strftime("%a")
-
-        # use real date as index to keep correct order
+        # keep date as index (important)
         trend_df = trend_df.set_index("day")
 
         st.line_chart(
             trend_df["count"],
-            # use_container_width=True
-            width='stretch'
+            width="stretch"
         )
 
     else:
@@ -125,60 +121,16 @@ else:
     st.info("No category data available.")
 
 def get_email_summary(email_id):
+    
     try:
         res = requests.get(
             f"{API_URL}/analytics/gmail-summary/{email_id}"
         )
         res.raise_for_status()
         return res.json().get("summary", "No summary")
+    
     except Exception as e:
         return f"Summary error: {e}"
-
-
-# LATEST EMAILS TABLE
-
-# st.subheader("Latest Emails")
-
-# if latest:
-
-#     df_latest = pd.DataFrame(latest)
-
-#     for _, row in df_latest.iterrows():
-
-#         # SMALL TITLE STYLE
-#         if row.get("priority") == "Important":
-
-#             st.markdown(
-#                 f"""
-#                 <div style="border-left:6px solid red;padding:10px;background:#2a1a1a">
-#                 🚨 <b>{row['subject']}</b><br>
-#                 From: {row['sender']}
-#                 </div>
-#                 """,
-#                 unsafe_allow_html=True
-#             )
-
-#         else:
-
-#             st.markdown(f"##### {row['subject']}")
-
-#         st.caption(
-#             f"From: {row['sender']} | Category: {row.get('category','General')}"
-#         )
-
-#     # FULL WIDTH BUTTON
-#         if st.button("Summarize Email", key=f"sum_{row['id']}"):
-
-#             with st.spinner("Generating AI summary..."):
-#                 summary = get_email_summary(row["id"])
-
-#             # SUMMARY BELOW (clean UI)
-#             st.info(summary)
-
-#         st.divider()
-
-# else:
-#     st.info("No recent emails available.")
 
 
 # SPLIT IMPORTANT AND NORMAL EMAILS
