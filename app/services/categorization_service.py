@@ -58,9 +58,11 @@ IMPORTANT_KEYWORDS = [
 
 URGENT_CONTEXT = """
 urgent meeting deadline action required
-respond immediately project discussion
-important update submit report
-call tomorrow schedule meeting
+respond immediately important update
+project discussion approval request
+schedule call join meeting tomorrow
+please review immediately submit report
+critical update response required
 """
 
 # Pre-compute semantic vector once
@@ -102,11 +104,11 @@ def detect_priority(text):
         semantic_score = 0
 
 
-    # HYBRID SCORE
-    final_score = (0.6 * keyword_score) + (0.4 * semantic_score)
+    # HYBRID SCORE (semantic more important)
+    final_score = (0.4 * keyword_score) + (0.6 * semantic_score)
 
-
-    if final_score > 0.75:
+    # New Threshold
+    if final_score > 0.4:
         return "Important"
 
     return "Normal"
