@@ -107,7 +107,8 @@ def get_analytics(days: int = 7):
             "sender": e.sender,
             "subject": e.subject,
             "category": e.category,
-            "priority": e.priority
+            "priority": e.priority,
+            "thread_id": e.thread_id   # NEW
         })   
 
     db.close()

@@ -9,6 +9,7 @@ router = APIRouter(
 )
 
 
+# GET ACTIONS
 @router.get("/")
 def get_actions(limit: int = 20):
 
@@ -25,7 +26,7 @@ def get_actions(limit: int = 20):
 
     for e in emails:
 
-        text = f"{e.subject}. {e.body}"
+        text = f"{e.subject}. {e.body[:500]}"
 
         extracted = extract_action_and_deadline(text)
 
@@ -33,8 +34,10 @@ def get_actions(limit: int = 20):
             results.append({
                 "email_id": e.id,
                 "subject": e.subject,
+                "sender": e.sender,                
                 "action": extracted["action"],
-                "deadline": extracted["deadline"]
+                "deadline": extracted["deadline"],
+                "is_completed": getattr(e, "is_completed", False)  # NEW SAFE
             })
 
     db.close()
@@ -43,3 +46,21 @@ def get_actions(limit: int = 20):
         "count": len(results),
         "actions": results
     }
+
+
+# MARK TASK COMPLETE
+@router.post("/complete/{email_id}")
+def mark_complete(email_id: int):
+
+    db = SessionLocal()
+
+    email = db.query(Email).filter(Email.id == email_id).first()
+
+    if not email:
+        return {"status": "error", "message": "Email not found"}
+
+    email.is_completed = True
+    db.commit()
+    db.close()
+
+    return {"status": "completed"}

@@ -1,6 +1,6 @@
 ## Created db table to store gmail data
 
-from sqlalchemy import Column, Integer, String, Text, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
 from app.dependencies import Base
 from datetime import datetime, timezone
 
@@ -17,3 +17,4 @@ class Email(Base):
     category = Column(String, default="General")
     priority = Column(String, default="Normal")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    is_completed = Column(Boolean, default=False)
