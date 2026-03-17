@@ -53,7 +53,9 @@ IMPORTANT_KEYWORDS = [
     "meeting",
     "action required",
     "immediate",
-    "submit"
+    "submit",
+    "do not fail",
+    "tomorrow",
 ]
 
 URGENT_CONTEXT = """
@@ -65,50 +67,37 @@ please review immediately submit report
 critical update response required
 """
 
-# Pre-compute semantic vector once
-urgent_vector = generate_embedding(URGENT_CONTEXT)
+# Precompute normalized vector
+def normalize(v):
+    return v / np.linalg.norm(v)
 
-# def detect_priority(text):
+urgent_vector = normalize(np.array(generate_embedding(URGENT_CONTEXT)))
 
-#     text_lower = text.lower()
 
-#     # Keyword rule
-#     for word in IMPORTANT_KEYWORDS:
-#         if word in text_lower:
-#             return "Important"
+def cosine_similarity(a, b):
+    a = normalize(np.array(a))
+    return np.dot(a, b)
 
-#     return "Normal"
 
 def detect_priority(text):
 
     text_lower = text.lower()
 
-    keyword_score = 0
-
-    # KEYWORD SCORE
+    # STEP 1: Strong keyword shortcut (FAST)
     for word in IMPORTANT_KEYWORDS:
         if word in text_lower:
-            keyword_score += 1
+            return "Important"
 
-    keyword_score = min(keyword_score / 2, 1)  # normalize
-
-
-    # SEMANTIC SCORE
+    # STEP 2: Semantic similarity
     try:
         email_vector = generate_embedding(text[:500])
-        similarity = np.dot(email_vector, urgent_vector)
-
-        semantic_score = float(similarity)
+        similarity = cosine_similarity(email_vector, urgent_vector)
 
     except:
-        semantic_score = 0
+        similarity = 0
 
-
-    # HYBRID SCORE (semantic more important)
-    final_score = (0.4 * keyword_score) + (0.6 * semantic_score)
-
-    # New Threshold
-    if final_score > 0.4:
+    # Threshold tuned for embeddings
+    if similarity > 0.75:
         return "Important"
 
     return "Normal"

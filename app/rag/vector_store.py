@@ -81,7 +81,31 @@ def add_email_vectors_batch(emails):
 
 # VECTOR SEARCH
 
-def search_email_vectors(query, n_results=5):
+# def search_email_vectors(query, n_results=5):
+
+#     query_embedding = generate_embedding(query)
+
+#     result = collection.query(
+#         query_embeddings=[query_embedding],
+#         n_results=n_results
+#     )
+
+#     output = []
+
+#     if result["ids"]:
+
+#         for i in range(len(result["ids"][0])):
+
+#             output.append({
+#                 "email_id": result["ids"][0][i],
+#                 "content": result["documents"][0][i],
+#                 "distance": result["distances"][0][i],
+#                 "created_at": result["metadatas"][0][i].get("created_at")
+#             })
+
+#     return output
+
+def search_email_vectors(query, n_results=10, threshold=0.4):
 
     query_embedding = generate_embedding(query)
 
@@ -91,16 +115,32 @@ def search_email_vectors(query, n_results=5):
     )
 
     output = []
+    seen_ids = set()
 
     if result["ids"]:
 
         for i in range(len(result["ids"][0])):
 
+            email_id = result["ids"][0][i]
+            distance = result["distances"][0][i]
+
+            # FILTER: only relevant results
+            if distance > threshold:
+                continue
+
+            # DEDUPLICATION
+            if email_id in seen_ids:
+                continue
+            seen_ids.add(email_id)
+
             output.append({
-                "email_id": result["ids"][0][i],
+                "email_id": email_id,
                 "content": result["documents"][0][i],
-                "distance": result["distances"][0][i],
+                "distance": distance,
                 "created_at": result["metadatas"][0][i].get("created_at")
             })
+
+    # SORT by best match
+    output = sorted(output, key=lambda x: x["distance"])
 
     return output
