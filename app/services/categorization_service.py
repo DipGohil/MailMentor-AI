@@ -1,42 +1,50 @@
 from app.rag.embeddings import generate_embedding
 import numpy as np
+from app.ml.email_classifier import predict_category
 
 def categorize_email(subject: str):
 
     if not subject:
         return "General"
-    
+
+    try:
+        # ML prediction
+        category = predict_category(subject)
+
+        # safety check
+        if category:
+            return category
+
+    except:
+        pass
+
+    # FALLBACK (your old rules)
     s = subject.lower()
 
-    # JOB / CAREER
     if any(word in s for word in [
         "job", "opening", "career", "recruiter",
         "intern", "apply", "hiring", "profile"
     ]):
         return "Job"
 
-    # FINANCE
     if any(word in s for word in [
         "balance", "fund", "security", "payment",
         "invoice", "bank", "transaction"
     ]):
         return "Finance"
 
-    # OTP / SECURITY
     if any(word in s for word in [
         "otp", "verification", "code",
         "security alert", "password"
     ]):
         return "Security"
 
-    # PROMOTION / MARKETING
     if any(word in s for word in [
         "offer", "discount", "sale", "deal",
         "premium", "subscription"
     ]):
         return "Promotion"
 
-    # MEETING / CALENDAR
     if any(word in s for word in [
         "meeting", "schedule", "calendar",
         "invite", "event"
