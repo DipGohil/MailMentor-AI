@@ -2,18 +2,13 @@ from app.dependencies import SessionLocal
 from app.models.email_model import Email
 from app.rag.vector_store import search_email_vectors
 from app.rag.llm import generate_answer
-
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
-
 import re
 from datetime import datetime
 
-
 MAX_EMAILS = 10
 MAX_CHARS_PER_EMAIL = 700
-
-
 
 # CLEAN EMAIL TEXT
 
