@@ -215,20 +215,25 @@ if important_emails:
                 
             # THREAD VIEW
             if st.button("View Thread", key=f"thread_{email['id']}"):
-
-                thread_res = requests.get(
-                    f"{API_URL}/emails/thread/{email['thread_id']}"
-                )
-
-                thread = thread_res.json().get("thread", [])
-
-                st.markdown("### Email Thread")
-
-                for msg in thread:
-                    st.markdown(f"**{msg['subject']}**")
-                    st.caption(msg["sender"])
-                    st.write(msg["body"])
-                    st.divider()
+                
+                if email.get("thread_id"):
+                    
+                    thread_res = requests.get(
+                        f"{API_URL}/emails/thread/{email['thread_id']}"
+                    )
+                    
+                    thread = thread_res.json().get("thread", [])
+                    
+                    st.markdown("### Email Thread")
+                    
+                    for msg in thread:
+                        st.markdown(f"**{msg['subject']}**")
+                        st.caption(msg["sender"])
+                        st.write(msg["body"])
+                        st.divider()
+                else:
+                    st.warning("Thread not available")
+                
             st.divider()
 
 
