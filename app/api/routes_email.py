@@ -2,6 +2,8 @@ from fastapi import APIRouter
 from app.services.email_service import fetch_and_store_emails
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+from app.dependencies import get_current_user
+from fastapi import Depends
 
 router = APIRouter(
     prefix="/emails",
@@ -9,7 +11,7 @@ router = APIRouter(
 )
 
 @router.get("/fetch")
-def fetch_emails():
+def fetch_emails(user = Depends(get_current_user)):
     
     result = fetch_and_store_emails(limit = 500)
     
@@ -30,7 +32,7 @@ def get_gmail_service():
 
 
 @router.get("/thread/{thread_id}")
-def get_thread(thread_id: str):
+def get_thread(thread_id: str, user = Depends(get_current_user)):
 
     service = get_gmail_service()
 

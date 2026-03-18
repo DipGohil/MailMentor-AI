@@ -6,6 +6,7 @@ from app.api.routes_summary import router as summary_router
 from app.dependencies import Base, engine
 from app.services.summary_service import summarize_single_email
 from app.api.routes_actions import router as actions_router
+from app.api.routes_auth import router as auth_router
 
 
 app = FastAPI(title = "MailMentor API")
@@ -15,6 +16,7 @@ app.include_router(search_router)
 app.include_router(analytics_router)
 app.include_router(summary_router)
 app.include_router(actions_router)
+app.include_router(auth_router)
 
 @app.get("/")
 def health():

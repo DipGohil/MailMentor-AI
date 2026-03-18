@@ -2,6 +2,8 @@ from fastapi import APIRouter
 from app.dependencies import SessionLocal
 from app.models.email_model import Email
 from app.services.action_service import extract_action_and_deadline
+from app.dependencies import get_current_user
+from fastapi import Depends
 
 router = APIRouter(
     prefix="/actions",
@@ -11,7 +13,7 @@ router = APIRouter(
 
 # GET ACTIONS
 @router.get("/")
-def get_actions(limit: int = 20):
+def get_actions(limit: int = 20, user = Depends(get_current_user)):
 
     db = SessionLocal()
 
@@ -50,7 +52,7 @@ def get_actions(limit: int = 20):
 
 # MARK TASK COMPLETE
 @router.post("/complete/{email_id}")
-def mark_complete(email_id: int):
+def mark_complete(email_id: int, user = Depends(get_current_user)):
 
     db = SessionLocal()
 

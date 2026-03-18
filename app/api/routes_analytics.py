@@ -7,6 +7,8 @@ from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from app.rag.llm import generate_answer
 from app.models.summary_model import Summary
+from app.dependencies import get_current_user
+from fastapi import Depends
 
 PRIORITY_KEYWORDS = [
     "urgent",
@@ -43,7 +45,7 @@ def detect_priority(subject):
     return "Normal"
 
 @router.get("/")
-def get_analytics(days: int = 7):
+def get_analytics(days: int = 7, user=Depends(get_current_user)):
 
     db = SessionLocal()
 
@@ -131,7 +133,7 @@ def get_analytics(days: int = 7):
     }
 
 @router.get("/gmail-summary/{message_id}")
-def summarize_gmail_email(message_id: str):
+def summarize_gmail_email(message_id: str, user = Depends(get_current_user)):
 
     db = SessionLocal()
     
@@ -216,7 +218,7 @@ Return only the summary.
     }
     
 @router.get("/email/{message_id}")
-def get_full_email(message_id: str):
+def get_full_email(message_id: str, user = Depends(get_current_user)):
 
     service = get_gmail_service()
 
