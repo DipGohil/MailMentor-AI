@@ -94,6 +94,7 @@ def fetch_and_store_emails(limit=100): #500
 
         # incremental sync
         messages = []
+        response = None       # New
 
         if last_history_id:
 
@@ -126,6 +127,11 @@ def fetch_and_store_emails(limit=100): #500
             ).execute()
 
             messages = response.get("messages", [])
+        
+        if response:
+            next_page = response.get("nextPageToken")
+        else:
+            next_page = None
 
         if not messages:
             break
