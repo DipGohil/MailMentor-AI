@@ -1,7 +1,13 @@
 import spacy
 import re
 
-nlp = spacy.load("en_core_web_sm")
+# safe for CI pipeline
+try:
+    nlp = spacy.load("en_core_web_sm")
+except:
+    import subprocess
+    subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
+    nlp = spacy.load("en_core_web_sm")
 
 # ACTION KEYWORDS
 ACTION_VERBS = [
