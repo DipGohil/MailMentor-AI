@@ -23,6 +23,11 @@ jobs:
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
+    
+    - name: Set env
+      run: |
+        echo "DATABASE_URL=sqlite:///./test.db" >> $GITHUB_ENV
+        echo "SECRET_KEY=testsecret" >> $GITHUB_ENV
 
     - name: Run tests
       run: |
