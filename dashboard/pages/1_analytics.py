@@ -6,9 +6,9 @@ st.set_page_config(layout="wide", page_title="MailMentor Elite Analytics")
 
 API_URL = "http://localhost:8000"
 
-# -------------------------
+
 # AUTH CHECK
-# -------------------------
+
 if "token" not in st.session_state or not st.session_state.token:
     st.warning("Please login first")
     st.stop()
@@ -16,14 +16,22 @@ if "token" not in st.session_state or not st.session_state.token:
 def get_headers():
     return {"Authorization": f"Bearer {st.session_state.token}"}
 
+# UI
 
-# -------------------------
+st.markdown("""
+<style>
+[data-testid="stSidebar"] {
+    background-color: #111827;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # DATE FILTER
-# -------------------------
+
 days_filter = st.selectbox(
     "Filter Emails (by day)",
-    [1, 3, 7, 14, 30],
-    index=2
+    list(range(1, 16)), # 1-15 days
+    index=6  # default = day-7
 )
 
 
@@ -43,9 +51,9 @@ def get_analytics(days):
 data = get_analytics(days_filter)
 
 
-# -------------------------
+
 # KPI DATA
-# -------------------------
+
 categories = data.get("categories", {})
 latest = data.get("latest", [])
 total = data.get("total", 0)
@@ -55,16 +63,16 @@ meetings = data.get("meetings", 0)
 finance = data.get("finance", 0)
 
 
-# -------------------------
+
 # HEADER
-# -------------------------
+
 st.title("MailMentor Elite Analytics")
 st.caption("AI-powered Executive Email Intelligence")
 
 
-# -------------------------
+
 # KPI SECTION
-# -------------------------
+
 st.markdown("### Executive KPIs")
 
 k1, k2, k3, k4, k5 = st.columns(5)
@@ -78,9 +86,9 @@ k5.metric("Finance", finance)
 st.divider()
 
 
-# -------------------------
+
 # ACTION DASHBOARD
-# -------------------------
+
 st.markdown("## Action Required")
 
 try:
@@ -124,9 +132,9 @@ else:
     st.info("No action items found.")
 
 
-# -------------------------
+
 # TREND GRAPH
-# -------------------------
+
 st.subheader("Weekly Email Trend")
 
 trend = data.get("trend", [])
@@ -143,9 +151,9 @@ else:
 st.divider()
 
 
-# -------------------------
+
 # CATEGORY CHART
-# -------------------------
+
 st.subheader("Email Category Distribution")
 
 if categories:
@@ -158,9 +166,9 @@ else:
     st.info("No category data available.")
 
 
-# -------------------------
+
 # SUMMARY FUNCTION
-# -------------------------
+
 def get_email_summary(email_id):
     try:
         res = requests.get(
@@ -172,16 +180,16 @@ def get_email_summary(email_id):
         return "Error fetching summary"
 
 
-# -------------------------
+
 # EMAIL LISTS
-# -------------------------
+
 important_emails = [e for e in latest if e.get("priority") == "Important"]
 normal_emails = [e for e in latest if e.get("priority") != "Important"]
 
 
-# -------------------------
+
 # IMPORTANT EMAILS
-# -------------------------
+
 if important_emails:
 
     st.markdown("## 🚨 Important Emails")
@@ -216,17 +224,51 @@ if important_emails:
             st.divider()
 
 
-# -------------------------
+
 # NORMAL EMAILS
-# -------------------------
+
 st.subheader("Latest Emails")
 
-for email in normal_emails:
+if normal_emails:
 
-    st.markdown(f"##### {email['subject']}")
-    st.caption(email["sender"])
+    for email in normal_emails:
 
-    if st.button("Summarize", key=f"norm_{email['id']}"):
-        st.info(get_email_summary(email["id"]))
+        st.markdown(f"##### {email['subject']}")
 
-    st.divider()
+        st.caption(
+            f"From: {email['sender']} | Category: {email.get('category','General')}"
+        )
+
+        col1, col2 = st.columns(2)
+
+        # SUMMARY BUTTON
+        with col1:
+            if st.button("Summarize Email", key=f"norm_{email['id']}"):
+                with st.spinner("Generating AI summary..."):
+                    summary = get_email_summary(email["id"])
+                st.info(summary)
+
+        # THREAD BUTTON (NEW)
+        with col2:
+            if st.button("View Thread", key=f"norm_thread_{email['id']}"):
+
+                if email.get("thread_id"):
+
+                    thread_res = requests.get(
+                        f"{API_URL}/emails/thread/{email['thread_id']}",
+                        headers=get_headers()
+                    )
+
+                    thread = thread_res.json().get("thread", [])
+
+                    st.markdown("### Email Thread")
+
+                    for msg in thread:
+                        st.markdown(f"**{msg['subject']}**")
+                        st.caption(msg["sender"])
+                        st.write(msg["body"])
+                        st.divider()
+                else:
+                    st.warning("Thread not available")
+
+        st.divider()
