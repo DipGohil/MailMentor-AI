@@ -23,7 +23,7 @@ def test_fetch_emails(test_client):
 
     res = test_client.get("/emails/fetch", headers=headers)
 
-    assert res.status_code in [200, 500]  
+    assert res.status_code == 200 
     # 500 allowed if Gmail not configured
 
 

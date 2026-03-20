@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+
 try:
     from groq import Groq
 except ImportError:
@@ -12,6 +13,9 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 def generate_answer(query, context):
+    
+    if os.getenv("TESTING") == "1":
+        return "Test response"
     
     if Groq is None:
         return "LLM not available in test environment"

@@ -33,6 +33,7 @@ jobs:
         echo "DATABASE_URL=sqlite:///./test.db" >> $GITHUB_ENV
         echo "SECRET_KEY=testsecret" >> $GITHUB_ENV
         echo "GROQ_API_KEY=dummy" >> $GITHUB_ENV
+        echo "TESTING=1" >> $GITHUB_ENV
 
     - name: Run tests
       run: |
