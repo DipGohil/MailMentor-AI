@@ -3,13 +3,13 @@ def get_token(client):
     # Step 1: Register (safe)
     client.post(
         "/auth/register",
-        json={"username": "testuser", "password": "12345"}
+        json={"username": "testuser_analytics", "password": "1122"}
     )
 
     # Step 2: Login
     res = client.post(
         "/auth/login",
-        json={"username": "testuser", "password": "12345"}
+        json={"username": "testuser_analytics", "password": "1122"}
     )
 
     assert res.status_code == 200, res.json()  # DEBUG LINE
