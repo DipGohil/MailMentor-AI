@@ -7,6 +7,8 @@ from app.dependencies import Base, engine
 from app.services.summary_service import summarize_single_email
 from app.api.routes_actions import router as actions_router
 from app.api.routes_auth import router as auth_router
+from app.dependencies import get_current_user
+from fastapi import Depends
 
 
 app = FastAPI(title = "MailMentor API")
@@ -23,7 +25,7 @@ def health():
     return {"status": "MailMentor running"}
 
 @app.get("/email-summary/{email_id}")
-def email_summary(email_id: int):
+def email_summary(email_id: int, user = Depends(get_current_user)):
     return {
         "summary": summarize_single_email(email_id)
     }
