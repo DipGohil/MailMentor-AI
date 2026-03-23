@@ -217,7 +217,7 @@ User Login → JWT Token → Stored in Session → Sent in Headers → Secure AP
 * `/summary`
 * `/actions`
 * `/actions/complete/{email_id}`
-* `/email-summary/{email-id}`
+* `/email-summary/{email_id}`
 
 ---
 
