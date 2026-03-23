@@ -212,8 +212,8 @@ User Login → JWT Token → Stored in Session → Sent in Headers → Secure AP
 * `/emails/thread/{thread_id}`
 * `/search`
 * `/analytics`
-* `/analytics/gmail-summary/{message-id}`
-* `/analytics/email/{message-id}`
+* `/analytics/gmail-summary/{message_id}`
+* `/analytics/email/{message_id}`
 * `/summary`
 * `/actions`
 * `/actions/complete/{email_id}`
