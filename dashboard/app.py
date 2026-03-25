@@ -99,7 +99,11 @@ def connect_gmail():
             st.success("Gmail connected successfully")
             st.rerun()
         else:
-            st.error("Unable to connect Gmail")
+            try:
+                error_detail = res.json().get("detail", "Unable to connect Gmail")
+            except:
+                error_detail = "Unable to connect Gmail"
+            st.error(error_detail)
     except Exception as e:
         st.error(f"Gmail connect failed: {e}")
 
@@ -184,8 +188,7 @@ with st.sidebar:
         st.success("Gmail connected")
         if gmail_email:
             st.caption(f"Connected as: {gmail_email}")
-        if st.button("Switch Gmail Account"):
-            connect_gmail()
+        st.info("If you want to add another account, please register/login first with a new user.")
     else:
         st.warning("Gmail not connected")
         if st.button("Connect Gmail Account"):

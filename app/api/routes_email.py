@@ -47,11 +47,42 @@ def gmail_status(user = Depends(get_current_user)):
 
 @router.get("/gmail/connect")
 def connect_gmail(user = Depends(get_current_user)):
+    from fastapi import HTTPException
+    from app.dependencies import SessionLocal
+    from app.models.user_model import GmailConnection
+    from app.ingestion.gmail_client import _token_path
+    
     if os.getenv("TESTING") == "1":
         return {"status": "skipped in test"}
 
     app_username = user.get("sub", "")
-    authenticate_gmail(app_username=app_username, force_reauth=True)
+    service = authenticate_gmail(app_username=app_username, force_reauth=True)
+    
+    try:
+        profile = service.users().getProfile(userId="me").execute()
+        email_address = profile.get("emailAddress")
+        
+        db = SessionLocal()
+        existing = db.query(GmailConnection).filter(GmailConnection.email_address == email_address).first()
+        
+        if existing and existing.app_username != app_username:
+            token_path = _token_path(app_username)
+            if os.path.exists(token_path):
+                os.remove(token_path)
+            db.close()
+            raise HTTPException(status_code=400, detail="This Gmail is already connected to another user.")
+            
+        if not existing:
+            new_conn = GmailConnection(app_username=app_username, email_address=email_address)
+            db.add(new_conn)
+            db.commit()
+            
+        db.close()
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=400, detail="Failed to verify Gmail account.")
+        
     return {"status": "connected"}
 
 def extract_attachments(payload):
