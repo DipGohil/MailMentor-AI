@@ -27,6 +27,7 @@ It enables users to **analyze, prioritize, summarize, and interact with emails i
 ## 📥 Gmail Integration
 
 * OAuth-based secure access
+* Strict 1-to-1 account mapping (One Login = One Gmail)
 * Incremental email syncing using `historyId`
 * Duplicate-safe ingestion
 
@@ -200,11 +201,15 @@ streamlit run dashboard/app.py
 
 ---
 
-# 🔐 Authentication Flow
+# 🔐 Authentication & Account Management Flow
 
 ```
 User Login → JWT Token → Stored in Session → Sent in Headers → Secure API Access
 ```
+
+✔ Strict Account Management:
+* Users can only connect to one unique Gmail account.
+* Database tracks connected Gmails to prevent multiple users from linking the same account.
 
 ✔ Protected Endpoints:
 
@@ -239,6 +244,7 @@ python -m pytest -v
 
 # 📌 Key Engineering Decisions
 
+* ✅ Strict 1-to-1 Gmail mapping (prevents account reuse across multiple logins)
 * ✅ Replaced rule-based categorization with ML classifier
 * ✅ Implemented RAG for intelligent search
 * ✅ Used spaCy for structured NLP extraction
