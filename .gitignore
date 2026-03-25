@@ -20,3 +20,4 @@ chroma_db/
 # secret files
 token.json
 credentials.json
+tokens

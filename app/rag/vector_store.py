@@ -38,6 +38,7 @@ def add_email_vectors_batch(emails):
     [
         {
             "id": email_id,
+            "owner_username": username,
             "text": email_text,
             "created_at": datetime
         }
@@ -57,7 +58,8 @@ def add_email_vectors_batch(emails):
         documents.append(e["text"])
 
         metadata = {
-            "email_id": str(e["id"])
+            "email_id": str(e["id"]),
+            "owner_username": str(e.get("owner_username", ""))
         }
         if e.get("created_at"):
             metadata["created_at"] = str(e["created_at"])
@@ -105,13 +107,14 @@ def add_email_vectors_batch(emails):
 
 #     return output
 
-def search_email_vectors(query, n_results=10, threshold=0.4):
+def search_email_vectors(query, owner_username: str, n_results=10, threshold=0.4):
 
     query_embedding = generate_embedding(query)
 
     result = collection.query(
         query_embeddings=[query_embedding],
-        n_results=n_results
+        n_results=n_results,
+        where={"owner_username": str(owner_username)}
     )
 
     output = []

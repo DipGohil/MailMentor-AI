@@ -10,8 +10,8 @@ router = APIRouter(
 
 @router.get("/")
 def search(q: str, user = Depends(get_current_user)):
-    
-    data = search_emails(q)
+    app_username = user.get("sub", "")
+    data = search_emails(q, app_username=app_username)
     
     return {
         "query": q,

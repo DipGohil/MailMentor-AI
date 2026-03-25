@@ -3,12 +3,11 @@ from app.dependencies import SessionLocal
 from app.models.email_model import Email
 from sqlalchemy import func
 from datetime import datetime, timezone, timedelta
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
 from app.rag.llm import generate_answer
 from app.models.summary_model import Summary
 from app.dependencies import get_current_user
 from fastapi import Depends
+from app.ingestion.gmail_client import authenticate_gmail
 
 PRIORITY_KEYWORDS = [
     "urgent",
@@ -23,16 +22,8 @@ PRIORITY_KEYWORDS = [
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
-def get_gmail_service():
-
-    creds = Credentials.from_authorized_user_file(
-        "token.json",
-        ["https://www.googleapis.com/auth/gmail.readonly"]
-    )
-
-    service = build("gmail", "v1", credentials=creds)
-
-    return service
+def get_gmail_service(app_username: str):
+    return authenticate_gmail(app_username=app_username)
 
 def detect_priority(subject):
 
@@ -48,12 +39,16 @@ def detect_priority(subject):
 def get_analytics(days: int = 7, user=Depends(get_current_user)):
 
     db = SessionLocal()
+    owner_username = user.get("sub", "")
 
     cutoff_date = datetime.now(timezone.utc) - timedelta(days = days)
     
     emails = (
         db.query(Email)
-        .filter(Email.created_at >= cutoff_date)
+        .filter(
+            Email.owner_username == owner_username,
+            Email.created_at >= cutoff_date
+        )
         .all()
     )
     
@@ -62,7 +57,10 @@ def get_analytics(days: int = 7, user=Depends(get_current_user)):
     
     category_counts = (
         db.query(Email.category, func.count(Email.id))
-        .filter(Email.created_at >= cutoff_date)
+        .filter(
+            Email.owner_username == owner_username,
+            Email.created_at >= cutoff_date
+        )
         .group_by(Email.category)
         .all()
     )
@@ -74,7 +72,10 @@ def get_analytics(days: int = 7, user=Depends(get_current_user)):
             func.date(Email.created_at).label("day"),
             func.count(Email.id)
         )
-        .filter(Email.created_at >= cutoff_date)
+        .filter(
+            Email.owner_username == owner_username,
+            Email.created_at >= cutoff_date
+        )
         .group_by(func.date(Email.created_at))
         .order_by(func.date(Email.created_at))
         .all()
@@ -93,7 +94,10 @@ def get_analytics(days: int = 7, user=Depends(get_current_user)):
     
     latest_emails = (
         db.query(Email)
-        .filter(Email.created_at >= cutoff_date)
+        .filter(
+            Email.owner_username == owner_username,
+            Email.created_at >= cutoff_date
+        )
         .order_by(Email.created_at.desc())
         .limit(50)
         .all()
@@ -157,7 +161,8 @@ def summarize_gmail_email(message_id: str, user = Depends(get_current_user)):
     
     # if not, fetch email from gmail
     
-    service = get_gmail_service()
+    app_username = user.get("sub", "")
+    service = get_gmail_service(app_username)
 
     msg_data = service.users().messages().get(
         userId="me",
@@ -220,7 +225,8 @@ Return only the summary.
 @router.get("/email/{message_id}")
 def get_full_email(message_id: str, user = Depends(get_current_user)):
 
-    service = get_gmail_service()
+    app_username = user.get("sub", "")
+    service = get_gmail_service(app_username)
 
     msg_data = service.users().messages().get(
         userId="me",

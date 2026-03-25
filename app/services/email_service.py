@@ -17,10 +17,11 @@ def get_db():
     finally:
         db.close()
 
-def save_email(db, data, generate_summary = True):
+def save_email(db, owner_username: str, data, generate_summary = True):
     
     # Prevent duplicates
     existing = db.query(Email).filter(
+        Email.owner_username == owner_username,
         Email.gmail_id == data["gmail_id"]
     ).first()
     
@@ -35,6 +36,7 @@ def save_email(db, data, generate_summary = True):
     
     email = Email(
         gmail_id = data["gmail_id"],
+        owner_username = owner_username,
         thread_id = data["thread_id"],
         sender = data["sender"],
         subject = data["subject"],
@@ -68,14 +70,15 @@ def save_email(db, data, generate_summary = True):
     return email
     
 
-def fetch_and_store_emails(limit=100): #500
+def fetch_and_store_emails(app_username: str, limit=100): #500
 
-    service = authenticate_gmail()
+    service = authenticate_gmail(app_username)
     db = SessionLocal()
     
     # get last history id
     last_email = (
         db.query(Email)
+        .filter(Email.owner_username == app_username)
         .order_by(Email.history_id.desc())
         .first()
     )
@@ -145,7 +148,7 @@ def fetch_and_store_emails(limit=100): #500
             # Attach gmail history id
             parsed["history_id"] = full_msg.get("historyId")
 
-            email = save_email(db, parsed, generate_summary=False)
+            email = save_email(db, app_username, parsed, generate_summary=False)
 
             if email:
 
@@ -159,6 +162,7 @@ def fetch_and_store_emails(limit=100): #500
 
                 emails_for_embedding.append({
                     "id": email.id,
+                    "owner_username": app_username,
                     "text": text_for_embedding,
                     "created_at": email.created_at
                 })

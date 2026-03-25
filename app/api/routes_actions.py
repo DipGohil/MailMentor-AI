@@ -16,9 +16,11 @@ router = APIRouter(
 def get_actions(limit: int = 20, user = Depends(get_current_user)):
 
     db = SessionLocal()
+    owner_username = user.get("sub", "")
 
     emails = (
         db.query(Email)
+        .filter(Email.owner_username == owner_username)
         .order_by(Email.created_at.desc())
         .limit(limit)
         .all()
@@ -55,8 +57,12 @@ def get_actions(limit: int = 20, user = Depends(get_current_user)):
 def mark_complete(email_id: int, user = Depends(get_current_user)):
 
     db = SessionLocal()
+    owner_username = user.get("sub", "")
 
-    email = db.query(Email).filter(Email.id == email_id).first()
+    email = db.query(Email).filter(
+        Email.owner_username == owner_username,
+        Email.id == email_id
+    ).first()
 
     if not email:
         return {"status": "error", "message": "Email not found"}

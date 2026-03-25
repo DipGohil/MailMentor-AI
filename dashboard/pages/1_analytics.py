@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 import pandas as pd
+import base64
+import re
 
 st.set_page_config(layout="wide", page_title="MailMentor Elite Analytics")
 
@@ -180,6 +182,140 @@ def get_email_summary(email_id):
         return "Error fetching summary"
 
 
+def fetch_attachment(message_id, attachment_id):
+    try:
+        res = requests.get(
+            f"{API_URL}/emails/attachment/{message_id}/{attachment_id}",
+            headers=get_headers()
+        )
+        res.raise_for_status()
+        return res.json()
+    except Exception as e:
+        st.error(f"Attachment fetch failed: {e}")
+        return None
+
+
+def to_standard_base64(data):
+    # Gmail returns URL-safe base64, browsers expect standard base64 for data URLs.
+    if not data:
+        return ""
+    converted = data.replace("-", "+").replace("_", "/")
+    while len(converted) % 4 != 0:
+        converted += "="
+    return converted
+
+
+def is_image_attachment(mime_type, filename):
+    mt = (mime_type or "").lower()
+    fn = (filename or "").lower()
+    return (
+        mt.startswith("image/")
+        or fn.endswith(".png")
+        or fn.endswith(".jpg")
+        or fn.endswith(".jpeg")
+        or fn.endswith(".gif")
+        or fn.endswith(".webp")
+        or fn.endswith(".bmp")
+    )
+
+
+def extract_drive_pdf_links(body_text):
+    if not body_text:
+        return []
+
+    lines = [line.strip() for line in body_text.splitlines() if line.strip()]
+    links = []
+    seen = set()
+
+    for idx, line in enumerate(lines):
+        urls = re.findall(r"https?://\S+", line)
+        for url in urls:
+            if "drive.google.com" not in url:
+                continue
+            if url in seen:
+                continue
+
+            seen.add(url)
+
+            # Try to use nearest human-friendly PDF name above the link.
+            filename = "Attachment.pdf"
+            for back in range(idx, -1, -1):
+                match = re.search(r"([^\s]+\.pdf)\b", lines[back], re.IGNORECASE)
+                if match:
+                    filename = match.group(1)
+                    break
+
+            links.append({
+                "filename": filename,
+                "url": url
+            })
+
+    return links
+
+
+def clean_email_body_for_display(body_text):
+    if not body_text:
+        return ""
+
+    # Remove raw URLs so thread looks cleaner like Gmail preview cards.
+    cleaned = re.sub(r"https?://\S+", "", body_text)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned
+
+
+def render_thread(thread, key_prefix):
+    st.markdown("### Email Thread")
+
+    for idx, msg in enumerate(thread):
+        with st.container(border=True):
+            st.markdown(f"**{msg.get('subject', '(No Subject)')}**")
+            st.caption(f"{msg.get('sender', 'Unknown sender')} | {msg.get('sent_at', '')}")
+            body_text = msg.get("body", "")
+            st.write(clean_email_body_for_display(body_text))
+
+            attachments = msg.get("attachments", [])
+            drive_pdf_links = extract_drive_pdf_links(body_text)
+
+            if attachments:
+                st.markdown("**Attachments**")
+
+                for a_idx, attachment in enumerate(attachments):
+                    filename = attachment.get("filename", "Unknown file")
+                    mime_type = attachment.get("mime_type", "application/octet-stream")
+                    attachment_id = attachment.get("attachment_id")
+                    message_id = msg.get("message_id")
+
+                    st.write(f"- {filename}")
+
+                    if not attachment_id or not message_id:
+                        continue
+
+                    payload = fetch_attachment(message_id, attachment_id)
+                    if not payload or not payload.get("data"):
+                        st.caption("Attachment unavailable")
+                        continue
+
+                    raw_bytes = base64.urlsafe_b64decode(payload["data"] + "===")
+                    resolved_mime = payload.get("mime_type", mime_type)
+
+                    if is_image_attachment(resolved_mime, filename):
+                        # Show image directly, no download button for image.
+                        st.image(raw_bytes, caption=filename)
+                    else:
+                        st.download_button(
+                            label=f"Download {filename}",
+                            data=raw_bytes,
+                            file_name=payload.get("filename", filename),
+                            mime=resolved_mime,
+                            key=f"{key_prefix}_save_{idx}_{a_idx}"
+                        )
+
+            if drive_pdf_links:
+                st.markdown("**Shared Files**")
+                for link in drive_pdf_links:
+                    st.markdown(f"- [{link['filename']}]({link['url']})")
+
+
 
 # EMAIL LISTS
 
@@ -214,12 +350,7 @@ if important_emails:
                     )
 
                     thread = res.json().get("thread", [])
-
-                    for msg in thread:
-                        st.markdown(f"**{msg['subject']}**")
-                        st.caption(msg["sender"])
-                        st.write(msg["body"])
-                        st.divider()
+                    render_thread(thread, key_prefix=f"important_{email['id']}")
 
             st.divider()
 
@@ -260,14 +391,7 @@ if normal_emails:
                     )
 
                     thread = thread_res.json().get("thread", [])
-
-                    st.markdown("### Email Thread")
-
-                    for msg in thread:
-                        st.markdown(f"**{msg['subject']}**")
-                        st.caption(msg["sender"])
-                        st.write(msg["body"])
-                        st.divider()
+                    render_thread(thread, key_prefix=f"normal_{email['id']}")
                 else:
                     st.warning("Thread not available")
 

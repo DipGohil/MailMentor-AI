@@ -8,4 +8,5 @@ router = APIRouter(prefix="/summary", tags=["Summary"])
 
 @router.get("/")
 def get_summary(user = Depends(get_current_user)):
-    return {"summary": generate_inbox_summary()}
+    owner_username = user.get("sub", "")
+    return {"summary": generate_inbox_summary(owner_username=owner_username)}

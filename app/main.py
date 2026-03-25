@@ -27,5 +27,5 @@ def health():
 @app.get("/email-summary/{email_id}")
 def email_summary(email_id: int, user = Depends(get_current_user)):
     return {
-        "summary": summarize_single_email(email_id)
+        "summary": summarize_single_email(user.get("sub", ""), email_id)
     }

@@ -2,8 +2,7 @@ from app.dependencies import SessionLocal
 from app.models.email_model import Email
 from app.rag.vector_store import search_email_vectors
 from app.rag.llm import generate_answer
-from googleapiclient.discovery import build
-from google.oauth2.credentials import Credentials
+from app.ingestion.gmail_client import authenticate_gmail
 import re
 from datetime import datetime
 
@@ -73,14 +72,8 @@ Content: {content}
 
 # FETCH LATEST EMAILS FROM GMAIL
 
-def get_latest_from_gmail(limit=10):
-
-    creds = Credentials.from_authorized_user_file(
-        "token.json",
-        ["https://www.googleapis.com/auth/gmail.readonly"]
-    )
-
-    service = build("gmail", "v1", credentials=creds)
+def get_latest_from_gmail(app_username: str, limit=10):
+    service = authenticate_gmail(app_username=app_username)
 
     response = service.users().messages().list(
         userId="me",
@@ -125,13 +118,14 @@ def get_latest_from_gmail(limit=10):
 
 # KEYWORD SEARCH (POSTGRES)
 
-def keyword_search(query):
+def keyword_search(query, owner_username: str):
 
     db = SessionLocal()
 
     emails = (
         db.query(Email)
         .filter(
+            Email.owner_username == owner_username,
             Email.subject.ilike(f"%{query}%") |
             Email.body.ilike(f"%{query}%")
         )
@@ -181,7 +175,7 @@ def score_email(email):
 
 # MAIN SEARCH FUNCTION
 
-def search_emails(query: str):
+def search_emails(query: str, app_username: str):
 
     query_lower = query.lower()
 
@@ -191,15 +185,15 @@ def search_emails(query: str):
         match = re.search(r"\d+", query_lower)
         limit = int(match.group()) if match else 5
 
-        results = get_latest_from_gmail(limit)
+        results = get_latest_from_gmail(app_username=app_username, limit=limit)
 
     else:
 
         # keyword search
-        keyword_results = keyword_search(query)
+        keyword_results = keyword_search(query, owner_username=app_username)
 
         # semantic search
-        semantic_results = search_email_vectors(query, n_results=5)
+        semantic_results = search_email_vectors(query, owner_username=app_username, n_results=5)
 
         results = keyword_results + semantic_results
 

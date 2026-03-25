@@ -7,7 +7,7 @@ from app.rag.llm import generate_answer
 from datetime import datetime, timedelta, timezone
 
 
-def generate_inbox_summary(limit = 3):
+def generate_inbox_summary(owner_username: str, limit = 3):
 
     db = SessionLocal()
     
@@ -18,6 +18,7 @@ def generate_inbox_summary(limit = 3):
     # fetch latest emails
     emails = (
         db.query(Email)
+        .filter(Email.owner_username == owner_username)
         .order_by(Email.created_at.desc())
         .limit(limit)
         .all()
@@ -76,11 +77,14 @@ Body: {body}
         
 """
     return context
-def summarize_single_email(email_id: int):
+def summarize_single_email(owner_username: str, email_id: int):
 
     db = SessionLocal()
 
-    email = db.query(Email).filter(Email.id == email_id).first()
+    email = db.query(Email).filter(
+        Email.owner_username == owner_username,
+        Email.id == email_id
+    ).first()
 
     db.close()
 
